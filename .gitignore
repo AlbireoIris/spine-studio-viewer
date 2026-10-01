@@ -1,0 +1,18 @@
+# 第三方运行时（官方 spine-player，另行放置）
+viewer-studio/spine-player.js
+viewer-studio/spine-player.css
+
+# 生成的清单与索引
+viewer-studio/manifest.json
+viewer-studio/manifest.json.bak
+viewer-studio/audio-index.json
+
+# 本地资源与产物
+skins/
+audio/
+*.log
+*.png
+*.bak
+
+# 凭据
+.env*

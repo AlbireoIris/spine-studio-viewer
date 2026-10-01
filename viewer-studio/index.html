@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Spine Studio · 交错战线资源台</title>
+<link rel="stylesheet" href="spine-player.css" />
+<style>
+:root {
+  --bg: #0b0e12;
+  --bg2: #10141a;
+  --panel: #0e1218;
+  --line: #1c2430;
+  --text: #d6deeb;
+  --muted: #7a8699;
+  --accent: #3d9cf0;
+  --accent2: #5ce1a6;
+  --warn: #f0b429;
+  --danger: #f07178;
+  --mono: "Cascadia Code", "JetBrains Mono", Consolas, "SF Mono", ui-monospace, monospace;
+  --sans: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); }
+body { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* top bar */
+header {
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 16px; border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, #0f141b, #0b0e12);
+  font-family: var(--mono); font-size: 13px;
+}
+.logo {
+  display: flex; align-items: center; gap: 8px;
+  color: var(--accent2); font-weight: 600; letter-spacing: 0.02em;
+}
+.logo .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent2); box-shadow: 0 0 10px var(--accent2);
+}
+.logo span.sub { color: var(--muted); font-weight: 400; margin-left: 4px; }
+.search {
+  flex: 1; max-width: 420px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+  color: var(--text); padding: 8px 12px; font-family: var(--mono); font-size: 12px;
+}
+.search:focus { outline: none; border-color: var(--accent); }
+.stat {
+  color: var(--muted); font-family: var(--mono); font-size: 11px;
+  padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px;
+}
+.stat b { color: var(--accent2); font-weight: 600; }
+
+.layout {
+  flex: 1; display: grid;
+  grid-template-columns: 280px 1fr 300px;
+  min-height: 0;
+}
+
+/* columns */
+.col {
+  border-right: 1px solid var(--line);
+  display: flex; flex-direction: column; min-height: 0;
+  background: var(--panel);
+}
+.col:last-child { border-right: none; }
+
+.col-h {
+  padding: 10px 12px; border-bottom: 1px solid var(--line);
+  font-family: var(--mono); font-size: 11px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.col-b { flex: 1; overflow: auto; padding: 8px; }
+
+/* skin list */
+.skin-item {
+  padding: 8px 10px; border-radius: 8px; cursor: pointer;
+  border: 1px solid transparent; margin-bottom: 6px;
+  transition: 0.12s ease;
+}
+.skin-item:hover { background: #15202c; border-color: var(--line); }
+.skin-item.active {
+  background: linear-gradient(90deg, #12283c, #0f1a26);
+  border-color: var(--accent);
+}
+.skin-item .n {
+  font-family: var(--mono); font-size: 11px; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.skin-item .m {
+  margin-top: 3px; font-family: var(--mono); font-size: 10px; color: var(--muted);
+  display: flex; gap: 8px;
+}
+.badge {
+  display: inline-block; padding: 1px 6px; border-radius: 999px;
+  font-size: 9px; font-family: var(--mono); border: 1px solid var(--line);
+  color: var(--muted);
+}
+.badge.ok { color: var(--accent2); border-color: #1d4d3a; }
+.badge.skin { color: var(--accent); border-color: #1c3a5a; }
+
+/* stage */
+.stage-wrap {
+  display: flex; flex-direction: column;
+  background: #070a0e;
+}
+.stage-bar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 8px 12px; border-bottom: 1px solid var(--line);
+  background: var(--bg2);
+}
+.btn {
+  appearance: none; border: 1px solid var(--line);
+  background: #121a24; color: var(--text);
+  border-radius: 7px; padding: 6px 10px;
+  font-family: var(--mono); font-size: 11px; cursor: pointer;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent2); }
+.btn.primary { background: #123048; border-color: #1e4d73; color: #9fd0ff; }
+.stage {
+  flex: 1; min-height: 420px; position: relative;
+  background:
+    linear-gradient(90deg, rgba(61,156,240,0.04) 1px, transparent 1px),
+    linear-gradient(rgba(61,156,240,0.04) 1px, transparent 1px),
+    #070a0e;
+  background-size: 24px 24px;
+}
+#player-container { width: 100%; height: 100%; min-height: 420px; }
+
+/* right panel */
+.tabs { display: flex; gap: 4px; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.tab {
+  flex: 1; text-align: center; padding: 7px 4px; cursor: pointer;
+  font-family: var(--mono); font-size: 11px; border-radius: 6px;
+  color: var(--muted); border: 1px solid transparent;
+}
+.tab.active { color: var(--accent2); background: #10201c; border-color: #1c3d32; }
+.pane { display: none; padding: 10px; overflow: auto; }
+.pane.show { display: block; }
+
+.anim-btn, .form-btn {
+  width: 100%; text-align: left; margin-bottom: 6px;
+  appearance: none; border: 1px solid var(--line);
+  background: #0c1218; color: var(--text);
+  border-radius: 8px; padding: 8px 10px;
+  font-family: var(--mono); font-size: 11px; cursor: pointer;
+}
+.anim-btn:hover, .form-btn:hover { border-color: var(--accent); }
+.anim-btn.active, .form-btn.active {
+  border-color: var(--accent2); color: var(--accent2); background: #0f221c;
+}
+
+.kv {
+  display: grid; grid-template-columns: 88px 1fr; gap: 6px 10px;
+  font-family: var(--mono); font-size: 11px; margin-bottom: 12px;
+}
+.kv .k { color: var(--muted); }
+.kv .v { color: var(--text); word-break: break-all; }
+
+audio { width: 100%; margin: 8px 0; }
+.audio-drop {
+  border: 1px dashed var(--line); border-radius: 10px;
+  padding: 16px; text-align: center; color: var(--muted);
+  font-family: var(--mono); font-size: 11px;
+}
+.audio-drop.drag { border-color: var(--accent2); color: var(--accent2); }
+
+.hint {
+  font-family: var(--mono); font-size: 10px; color: var(--muted);
+  line-height: 1.7; margin-top: 10px;
+}
+.hint code { color: var(--accent2); }
+
+/* merge row */
+.merge-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.merge-slot {
+  border: 1px solid var(--line); border-radius: 10px;
+  background: #070a0e; min-height: 180px; overflow: hidden;
+}
+.merge-slot .cap {
+  font-family: var(--mono); font-size: 10px; color: var(--muted);
+  padding: 6px 8px; border-bottom: 1px solid var(--line);
+}
+
+/* scroll */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #243041; border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* stale-page notice: index.html changed on disk while this tab stayed open */
+#reload-banner {
+  position: fixed; top: 10px; right: 12px; z-index: 99;
+  display: none; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 8px; cursor: pointer;
+  background: #1d2b16; border: 1px solid #3c6b2a; color: #b7e78a;
+  font-family: var(--mono); font-size: 11px;
+}
+#reload-banner.show { display: flex; }
+#reload-banner:hover { border-color: var(--accent2); color: #d6ffb0; }
+
+@media (max-width: 1100px) {
+  .layout { grid-template-columns: 220px 1fr 240px; }
+}
+</style>
+</head>
+<body>
+<div id="reload-banner" title="点击刷新">● 查看器有新版本，点此刷新</div>
+<header>
+  <div class="logo"><span class="dot"></span>Spine Studio <span class="sub">// crosscore assets</span></div>
+  <input class="search" id="q" placeholder="search skins / characters / cg..." />
+  <div class="stat">loaded <b id="stat-total">0</b></div>
+  <div class="stat">focus <b id="stat-mode">role</b></div>
+  <div class="stat">spine <b>4.2</b></div>
+</header>
+
+<div class="layout">
+  <!-- left: skins -->
+  <section class="col">
+    <div class="col-h"><span>资源列表</span><span id="list-count">0</span></div>
+    <div class="col-b" id="list"></div>
+  </section>
+
+  <!-- center: stage -->
+  <section class="col stage-wrap">
+    <div class="stage-bar">
+      <button class="btn primary" id="btn-focus">聚焦角色</button>
+      <button class="btn" id="btn-fit">完整画面</button>
+      <button class="btn" id="btn-zoom-in">+</button>
+      <button class="btn" id="btn-zoom-out">−</button>
+      <button class="btn" id="btn-toggle-bg">隐藏装饰层</button>
+      <button class="btn" id="btn-reset-view" title="清除手动缩放/平移，回到自动取景">重置视图</button>
+      <button class="btn" id="btn-loop">循环</button>
+      <button class="btn" id="btn-pause">暂停</button>
+      <button class="btn" id="btn-fs">全屏</button>
+      <span class="stat" id="now-name">—</span>
+    </div>
+    <div class="stage" id="stage">
+      <div id="player-container"></div>
+    </div>
+  </section>
+
+  <!-- right: panels -->
+  <section class="col">
+    <div class="tabs">
+      <div class="tab active" data-pane="pane-anim">动作</div>
+      <div class="tab" data-pane="pane-audio">声音</div>
+      <div class="tab" data-pane="pane-forms">多形态</div>
+      <div class="tab" data-pane="pane-info">信息</div>
+    </div>
+    <div class="pane show" id="pane-anim"><div id="anim-list"></div></div>
+    <div class="pane" id="pane-audio">
+      <div class="hint" id="audio-match" style="margin:0 0 8px">音频库加载中…</div>
+      <label class="hint" style="display:flex;align-items:center;gap:6px;margin:0 0 8px">
+        <input type="checkbox" id="audio-autoplay" /> 选中皮肤时自动播放
+      </label>
+      <div id="audio-list"></div>
+      <audio id="audio" controls></audio>
+      <input class="search" id="audio-search" placeholder="搜索音频库（671 条）…" style="width:100%;margin:8px 0 6px" />
+      <div id="audio-search-list" class="col-b" style="max-height:170px;padding:0"></div>
+      <div class="audio-drop" id="audio-drop" style="margin-top:8px">
+        拖入 wav / mp3 / ogg 播放<br/>
+        <span style="opacity:.7">acb/awb 需先转码</span>
+      </div>
+      <div class="hint">
+        音频目录：<code>D:\AIHOME\Mimo\audio</code>（按角色英文名配对，索引见 <code>audio-index.json</code>）
+      </div>
+    </div>
+    <div class="pane" id="pane-forms">
+      <div class="hint" style="margin:0 0 10px">同角色多形态并排预览（如 osiris03a / 03b / 03c）</div>
+      <div id="form-list"></div>
+      <div class="merge-grid" id="merge-grid"></div>
+    </div>
+    <div class="pane" id="pane-info">
+      <div class="kv" id="info-kv"></div>
+      <div class="hint">
+        数据目录：<code>D:\AIHOME\Mimo\skins</code><br/>
+        聚焦模式会缩放到 <code>Role</code> 骨骼区域，避免装饰框把角色压得很小。
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="spine-player.js"></script>
+<script>
+/* ---------- state ---------- */
+let MANIFEST = { items: [] };
+let current = null;
+let player = null;
+let loop = true;
+let paused = false;
+let bgHidden = false;
+let hiddenSlots = [];
+let focusMode = "role";
+const groupIndex = {};
+
+/* ---------- helpers ---------- */
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, text) => {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+};
+
+function baseName(id) {
+  return (id || "")
+    .replace(/^prefabs_spine_/, "")
+    .replace(/_spine$/, "")
+    .replace(/^prefabs_/, "");
+}
+
+function groupOf(item) {
+  // collapse multi-form suffixes: skin_XXXX03a -> skin_XXXX03
+  const n = item.id.replace(/^prefabs_spine_/, "").replace(/_spine$/, "");
+  return n.replace(/([0-9])([abc])$/, "$1").replace(/([abc])$/, "");
+}
+
+function loadManifest() {
+  return fetch("manifest.json")
+    .then((r) => r.json())
+    .then((d) => {
+      MANIFEST = d;
+      renderList();
+      $("stat-total").textContent = d.items.length;
+      $("list-count").textContent = d.items.length;
+    })
+    .catch(() => {
+      $("list").innerHTML = '<div class="hint">manifest.json 不存在，请先运行提取脚本</div>';
+    });
+}
+
+function renderList(filter = "") {
+  const box = $("list");
+  box.innerHTML = "";
+  const q = filter.trim().toLowerCase();
+  const items = MANIFEST.items.filter((it) =>
+    !q ||
+    it.name.toLowerCase().includes(q) ||
+    it.id.toLowerCase().includes(q) ||
+    it.category.includes(q)
+  );
+  items.forEach((it) => {
+    const n = el("div", "skin-item" + (current && current.id === it.id ? " active" : ""));
+    n.appendChild(el("div", "n", it.name));
+    const m = el("div", "m");
+    m.appendChild(el("span", "badge " + (it.category === "skins" ? "skin" : ""), it.category));
+    m.appendChild(el("span", "badge ok", `${it.anims} anims`));
+    if (it.bones) m.appendChild(el("span", "badge", `${it.bones} bones`));
+    n.appendChild(m);
+    n.onclick = () => selectSkin(it);
+    box.appendChild(n);
+  });
+}
+
+function selectSkin(item) {
+  current = item;
+  $("now-name").textContent = item.name;
+  renderList($("q").value);
+  renderAnims(item);
+  renderInfo(item);
+  destroyMiniPlayers(); // free the previous batch's contexts before the new stage
+  renderForms(item);
+  mountPlayer(item);
+  selectAudioFor(item);
+}
+
+function renderAnims(item) {
+  const box = $("anim-list");
+  box.innerHTML = "";
+  (item.animNames || []).forEach((name) => {
+    const b = el("button", "anim-btn", name);
+    b.onclick = () => {
+      if (player && player.skeleton) player.setAnimation(name, true);
+      box.querySelectorAll(".anim-btn").forEach((x) => x.classList.remove("active"));
+      b.classList.add("active");
+    };
+    box.appendChild(b);
+  });
+  if (!item.animNames || !item.animNames.length) {
+    box.innerHTML = '<div class="hint">无动画数据</div>';
+  }
+}
+
+function renderInfo(item) {
+  const kv = $("info-kv");
+  kv.innerHTML = "";
+  const rows = [
+    ["ID", item.id],
+    ["Category", item.category],
+    ["Group", item.group || groupOf(item)],
+    ["JSON", item.json],
+    ["Atlas", item.atlas || "—"],
+    ["PNG", item.png || "—"],
+    ["Animations", item.anims],
+    ["Bones", item.bones],
+  ];
+  rows.forEach(([k, v]) => {
+    kv.appendChild(el("div", "k", k));
+    kv.appendChild(el("div", "v", String(v)));
+  });
+}
+
+/* Mini "多形态" players each hold their own WebGL context. They must be
+   disposed before the next batch is created, otherwise Chrome evicts the
+   oldest context — which is the main stage — and the preview goes blank.
+   spine-player's dispose() only drops GL resources; the context itself lives
+   until GC, so release it explicitly through WEBGL_lose_context. */
+let miniPlayers = [];
+let pendingForms = [];
+let mergeTimer = null;
+
+function releaseCanvasGL(host) {
+  try {
+    const canvas = host && host.querySelector && host.querySelector("canvas");
+    if (!canvas) return;
+    // Mark it first: our own loseContext() must not trigger the recovery guard,
+    // otherwise every teardown remounts the stage forever.
+    canvas.dataset.glReleased = "1";
+    const gl = canvas.getContext("webgl2") || canvas.getContext("webgl");
+    const ext = gl && gl.getExtension("WEBGL_lose_context");
+    if (ext) ext.loseContext();
+  } catch (e) {}
+}
+
+function destroyMiniPlayers() {
+  if (mergeTimer) { clearTimeout(mergeTimer); mergeTimer = null; }
+  miniPlayers.forEach((p) => {
+    try {
+      releaseCanvasGL(p && p.dom ? p.dom : null);
+      if (p && p.dispose) p.dispose();
+    } catch (e) {}
+  });
+  miniPlayers = [];
+  const grid = $("merge-grid");
+  if (grid) grid.innerHTML = "";
+}
+
+function buildMergeSlots() {
+  const grid = $("merge-grid");
+  if (!grid) return;
+  destroyMiniPlayers();
+  if (!pendingForms.length) return;
+  pendingForms.forEach((f, i) => {
+    const slot = el("div", "merge-slot");
+    const cap = el("div", "cap", `#${i + 1} ${f.name}`);
+    slot.appendChild(cap);
+    const host = el("div");
+    host.style.height = "160px";
+    slot.appendChild(host);
+    grid.appendChild(slot);
+    // mini player
+    try {
+      const mini = new spine.SpinePlayer(host, {
+        jsonUrl: `../skins/${f.path}/${f.json}`,
+        atlasUrl: `../skins/${f.path}/${f.atlas}`,
+        animation: (f.animNames && f.animNames.includes("idle1")) ? "idle1" : (f.animNames ? f.animNames[0] : ""),
+        showControls: false,
+        showLoading: false,
+        alpha: true,
+        backgroundColor: "#00000000",
+        // let spine-player fit the animation bounds here too (a hard-coded box
+        // is what made these thumbnails show a tiny character in a corner)
+        viewport: { transitionTime: 0 },
+      });
+      miniPlayers.push(mini);
+    } catch (e) {
+      host.innerHTML = '<div class="hint">load fail</div>';
+    }
+  });
+}
+
+/* Rebuild the merge preview only for the visible "多形态" pane. */
+function renderForms(item) {
+  const g = groupOf(item);
+  const forms = MANIFEST.items.filter((it) => groupOf(it) === g).sort((a, b) => a.name.localeCompare(b.name));
+  const box = $("form-list");
+  box.innerHTML = "";
+  forms.forEach((f) => {
+    const b = el("button", "form-btn" + (f.id === item.id ? " active" : ""), f.name);
+    b.onclick = () => selectSkin(f);
+    box.appendChild(b);
+  });
+  pendingForms = forms.slice(0, 4);
+  if ($("pane-forms").classList.contains("show")) {
+    // Build the mini players only after the new main player owns its context,
+    // so the stage is never the oldest context in the renderer.
+    if (mergeTimer) clearTimeout(mergeTimer);
+    mergeTimer = setTimeout(() => { mergeTimer = null; buildMergeSlots(); }, 400);
+  }
+}
+
+/* ---------- player ---------- */
+function destroyPlayer() {
+  const host = $("player-container");
+  try {
+    if (player && player.dispose) {
+      releaseCanvasGL(host);
+      player.dispose();
+    }
+  } catch (e) {}
+  player = null;
+  host.innerHTML = "";
+}
+
+function findBone(skel, candidates) {
+  for (const name of candidates) {
+    try {
+      const b = skel.findBone(name);
+      if (b) return b;
+    } catch (e) {}
+  }
+  return null;
+}
+
+/* ---------- viewport ----------
+   spine-player's render loop only READS `currentViewport` (plus
+   `previousViewport` / `viewportTransitionStart` for the tween) — `viewport`
+   itself is a scratch output it overwrites every frame, so assigning to it
+   does nothing. All numbers are world units. Two consequences:
+     * config.viewport.x/y/width/height (all four) SKIP the built-in
+       animation-bounds fit, and a hard-coded box is exactly why every skin
+       rendered tiny;
+     * the player ships no pan and no wheel zoom, so both live here. */
+const ROLE_BONES = ["Role", "role", "body1", "root1_0.635"];
+
+function viewportBox(p) {
+  const v = (p && p.currentViewport) || {};
+  return { x: v.x || 0, y: v.y || 0, width: v.width || 1, height: v.height || 1 };
+}
+
+/* Padding must follow the box we set. spine-player converts the "10%" pads ONCE,
+   against whatever box setViewport() computed (the whole animation union), and
+   the render loop then draws `width + padLeft + padRight`. Keeping those
+   absolute pads while shrinking the box to the figure made the visible area
+   twice the intended one — the "framed but still small" symptom. Ratios are
+   re-captured after every setViewport() so padding always scales along. */
+let padRatio = { l: 0.1, r: 0.1, t: 0.1, b: 0.1 };
+
+function capturePadRatio(p) {
+  const v = (p && p.currentViewport) || {};
+  const w = v.width || 1, h = v.height || 1;
+  padRatio = {
+    l: Math.min(0.5, Math.max(0, (v.padLeft || 0) / w)),
+    r: Math.min(0.5, Math.max(0, (v.padRight || 0) / w)),
+    t: Math.min(0.5, Math.max(0, (v.padTop || 0) / h)),
+    b: Math.min(0.5, Math.max(0, (v.padBottom || 0) / h)),
+  };
+}
+
+function setViewportBox(p, box, animate) {
+  const pads = {
+    padLeft: box.width * padRatio.l,
+    padRight: box.width * padRatio.r,
+    padTop: box.height * padRatio.t,
+    padBottom: box.height * padRatio.b,
+  };
+  const prev = p && p.currentViewport;
+  p.previousViewport = animate && prev ? Object.assign({}, prev) : null;
+  p.currentViewport = Object.assign({}, box, pads);
+  p.viewportTransitionStart = performance.now();
+}
+
+function currentAnimationName(p) {
+  const entry = p && p.animationState && p.animationState.getCurrent(0);
+  return entry && entry.animation ? entry.animation.name : null;
+}
+
+/* ---------- view state ----------
+   The auto-framed box is the *base*; what the user sees is base × zoom + pan.
+   Both are stored as scale-free numbers (zoom factor, pan as a fraction of the
+   base box) so an adjustment made on one skin carries over to the next, which
+   have wildly different world-unit sizes, and so it can be persisted. */
+const VIEW_KEY = "spineStudio.view";
+let baseBox = null;
+let viewState = { zoom: 1, panX: 0, panY: 0 };
+
+function clampView() {
+  viewState.zoom = Math.min(40, Math.max(0.08, viewState.zoom));
+  viewState.panX = Math.min(2, Math.max(-2, viewState.panX));
+  viewState.panY = Math.min(2, Math.max(-2, viewState.panY));
+}
+
+function loadViewState() {
+  try {
+    const v = JSON.parse(localStorage.getItem(VIEW_KEY) || "null");
+    if (v && isFinite(v.zoom) && v.zoom > 0) {
+      viewState = { zoom: v.zoom, panX: v.panX || 0, panY: v.panY || 0 };
+      clampView();
+    }
+  } catch (e) {}
+}
+
+function saveViewState() {
+  try { localStorage.setItem(VIEW_KEY, JSON.stringify(viewState)); } catch (e) {}
+}
+
+function effectiveBox() {
+  if (!baseBox) return null;
+  const z = viewState.zoom;
+  const w = baseBox.width * z, h = baseBox.height * z;
+  const cx = baseBox.x + baseBox.width / 2 + viewState.panX * baseBox.width;
+  const cy = baseBox.y + baseBox.height / 2 + viewState.panY * baseBox.height;
+  return { x: cx - w / 2, y: cy - h / 2, width: w, height: h };
+}
+
+/** Push the effective box to the player (no tween: it must not drift). */
+function applyView(p) {
+  const box = effectiveBox();
+  if (box && p) setViewportBox(p, box, false);
+}
+
+/** New auto-frame for the current skin; keeps the user's zoom/pan on top. */
+function setBaseBox(p, box) {
+  baseBox = box ? { x: box.x, y: box.y, width: box.width, height: box.height } : null;
+  applyView(p);
+}
+
+function resetViewAdjustment() {
+  viewState = { zoom: 1, panX: 0, panY: 0 };
+  saveViewState();
+}
+
+/** Refit to the animation's real bounds — spine-player computes them for us.
+    Becomes the new base box; the user's zoom/pan is re-applied on top. */
+function refitToBounds(p, animate, name) {
+  const anim = name || currentAnimationName(p);
+  if (!anim) return false;
+  try {
+    p.setViewport(anim);
+  } catch (e) {
+    return false;
+  }
+  if (!animate) {
+    p.previousViewport = null;
+    p.viewportTransitionStart = performance.now();
+  }
+  capturePadRatio(p); // pads are relative to THIS box from now on
+  setBaseBox(p, viewportBox(p));
+  return true;
+}
+
+/** Bounds over a *subset* of slots, mirroring Skeleton.getBounds().
+    Deliberately does NOT detach attachments: a detached mesh breaks every
+    linkedmesh that references it (their vertices become garbage, the measured
+    box explodes and the camera zooms far out). Clipping state is advanced for
+    every slot, only the accumulation is filtered. */
+const QUAD_TRIANGLES = [0, 1, 2, 2, 3, 0];
+
+function setArraySize(arr, size, value) {
+  let out = arr;
+  if (!out || out.length < size) out = new Array(size);
+  for (let i = 0; i < size; i++) out[i] = value;
+  return out;
+}
+
+function subsetBounds(p, keep) {
+  const skel = p && p.skeleton;
+  if (!skel) return null;
+  const Region = spine.RegionAttachment;
+  const Mesh = spine.MeshAttachment;
+  const Clipping = spine.ClippingAttachment;
+  const clip = p.sceneRenderer && p.sceneRenderer.skeletonRenderer
+    ? p.sceneRenderer.skeletonRenderer.getSkeletonClipping()
+    : null;
+  let temp = new Array(2);
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  const drawOrder = skel.drawOrder || skel.slots || [];
+  for (let i = 0; i < drawOrder.length; i++) {
+    const slot = drawOrder[i];
+    if (!slot.bone || !slot.bone.active) continue;
+    const attachment = slot.getAttachment();
+    let vertices = null, triangles = null, verticesLength = 0;
+    if (Region && attachment instanceof Region) {
+      verticesLength = 8;
+      temp = setArraySize(temp, verticesLength, 0);
+      attachment.computeWorldVertices(slot, temp, 0, 2);
+      vertices = temp;
+      triangles = QUAD_TRIANGLES;
+    } else if (Mesh && attachment instanceof Mesh) {
+      verticesLength = attachment.worldVerticesLength;
+      temp = setArraySize(temp, verticesLength, 0);
+      attachment.computeWorldVertices(slot, 0, verticesLength, temp, 0, 2);
+      vertices = temp;
+      triangles = attachment.triangles;
+    } else if (Clipping && attachment instanceof Clipping && clip) {
+      clip.clipStart(slot, attachment);
+      continue;
+    }
+    if (vertices && triangles) {
+      if (clip && clip.isClipping()) {
+        clip.clipTriangles(vertices, triangles, triangles.length);
+        vertices = clip.clippedVertices;
+      }
+      let keepIt = false;
+      try { keepIt = keep(slot) } catch (e) {}
+      if (keepIt) {
+        for (let ii = 0, nn = vertices.length; ii < nn; ii += 2) {
+          const x = vertices[ii], y = vertices[ii + 1];
+          if (x < minX) minX = x;
+          if (y < minY) minY = y;
+          if (x > maxX) maxX = x;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+    if (clip) clip.clipEndWithSlot(slot);
+  }
+  if (clip) clip.clipEnd();
+  if (!isFinite(minX) || !isFinite(minY) || maxX <= minX || maxY <= minY) return null;
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
+/** Bounds of the slots a predicate keeps (no attachment is detached). */
+function boundsOfSlots(p, keep) {
+  return subsetBounds(p, keep);
+}
+
+function isDecorativeSlot(slot) {
+  const decor = /^(BackGround|effect|bg_)/i;
+  const slotName = (slot.data && slot.data.name) || "";
+  const boneName = (slot.bone && slot.bone.data && slot.bone.data.name) || "";
+  return decor.test(slotName) || decor.test(boneName);
+}
+
+/** Bones in the subtree of the game's character root ("Role"). Scene props and
+    backdrops normally hang off other roots, so this isolates the figure. */
+function roleSubtreeBones(skel) {
+  const role = findBone(skel, ROLE_BONES);
+  if (!role) return null;
+  const inRole = new Set();
+  (skel.bones || []).forEach((b) => {
+    let n = b;
+    while (n) {
+      if (n === role) { inRole.add(b); return; }
+      n = n.parent;
+    }
+  });
+  return inRole.size > 2 ? inRole : null;
+}
+
+/** Bones forming the dense cluster around the character root. Scenery props are
+    usually spread far from it, so a distance percentile separates figure from
+    set dressing even when their slot names look alike (this game names garden
+    parts after body words, so name matching alone does not work). */
+function clusterBones(skel, role, ratio) {
+  if (!role) return null;
+  const ox = skel.x || 0, oy = skel.y || 0;
+  const rx = ox + role.worldX, ry = oy + role.worldY;
+  const arr = (skel.bones || []).map((b) => ({ b, d: Math.hypot(ox + b.worldX - rx, oy + b.worldY - ry) }));
+  if (arr.length < 12) return null;
+  arr.sort((a, b) => a.d - b.d);
+  const keep = arr.slice(0, Math.max(6, Math.round(arr.length * ratio)));
+  return new Set(keep.map((k) => k.b));
+}
+
+/** Bounds of the *figure*: first the dense bone cluster hanging off the game's
+    character root, then its whole subtree, then every non-decorative layer.
+    The order matters — the osiris scene spans 25805 units while the figure is
+    a small part of that, which is what made the character look tiny. */
+function characterBounds(p) {
+  const skel = p && p.skeleton;
+  if (!skel) return null;
+  const role = findBone(skel, ROLE_BONES);
+  const full = boundsOfSlots(p, (slot) => !isDecorativeSlot(slot));
+  // A candidate frame is accepted when it holds a real share of the DRAWN
+  // slots. A "frame vs whole scene" size test is exactly wrong here: for osiris
+  // the figure legitimately is a small slice of a 25805-unit scene, and that
+  // test rejected every correct candidate.
+  const countCoverage = (keep) => {
+    let total = 0, kept = 0;
+    (skel.slots || []).forEach((slot) => {
+      if (!slot.getAttachment()) return;
+      total++;
+      if (keep(slot)) kept++;
+    });
+    return { total, kept, ok: total >= 8 && kept >= 3 && kept < total && kept / total >= 0.15 };
+  };
+  if (role) {
+    // Measured evidence for this game: a "closest N% of bones to Role" cluster
+    // does NOT isolate the figure (its box still spans the whole 25805-unit set
+    // because scenery layers hang off near-Role bones), while the Role subtree
+    // does (5337 units, 67% of the drawn slots). So the subtree is the figure.
+    const inRole = roleSubtreeBones(skel);
+    if (inRole) {
+      const keep = (slot) => inRole.has(slot.bone) && !isDecorativeSlot(slot);
+      if (countCoverage(keep).ok) {
+        const box = boundsOfSlots(p, keep);
+        if (box) return box;
+      }
+    }
+  }
+  return full;
+}
+
+/** Frame the character for real: measure the character box FIRST (the skeleton
+    must still be in its live playback pose), then refit and apply the window.
+    Order matters — spine-player's setViewport() samples 100 frames of the
+    animation and LEAVES the skeleton at the last one, so measuring afterwards
+    reports that frame's prop spread instead of the character. */
+function frameCharacter(p, margin) {
+  const skel = p && p.skeleton;
+  if (!skel) return false;
+  const cb = characterBounds(p); // live pose, before anything re-fits
+  refitToBounds(p, false);
+  const full = viewportBox(p);
+  let cx, cy, w, h;
+  if (cb) {
+    cx = cb.x + cb.width / 2;
+    cy = cb.y + cb.height / 2;
+    w = cb.width * (1 + margin);
+    h = cb.height * (1 + margin);
+    // The figure's own subtree still carries some set dressing around it, so
+    // tighten toward the character root — biased, not centred on it, so the
+    // head cannot be cropped — and keep the window inside the measured box.
+    const role = findBone(skel, ROLE_BONES);
+    if (role) {
+      const rx = (skel.x || 0) + role.worldX, ry = (skel.y || 0) + role.worldY;
+      const k = 0.78;
+      const tw = w * k, th = h * k;
+      const tx = cx + (rx - cx) * 0.3, ty = cy + (ry - cy) * 0.3;
+      const x = Math.min(Math.max(tx - tw / 2, cb.x), Math.max(cb.x, cb.x + cb.width - tw));
+      const y = Math.min(Math.max(ty - th / 2, cb.y), Math.max(cb.y, cb.y + cb.height - th));
+      w = Math.max(tw, cb.width * 0.5);
+      h = Math.max(th, cb.height * 0.5);
+      setBaseBox(p, { x, y, width: w, height: h });
+      return true;
+    }
+    // never crop the character, never exceed the fitted view
+    w = Math.min(Math.max(w, cb.width), full.width);
+    h = Math.min(Math.max(h, cb.height), full.height);
+  } else {
+    const bone = findBone(skel, ROLE_BONES);
+    cx = bone ? (skel.x || 0) + bone.worldX : full.x + full.width / 2;
+    cy = bone ? (skel.y || 0) + bone.worldY : full.y + full.height / 2;
+    w = full.width * 0.45;
+    h = full.height * 0.45;
+  }
+  setBaseBox(p, { x: cx - w / 2, y: cy - h / 2, width: w, height: h });
+  return true;
+}
+
+function zoomBy(p, factor) {
+  viewState.zoom *= factor;
+  clampView();
+  saveViewState();
+  applyView(p);
+}
+
+function screenToWorldDelta(p, dx, dy) {
+  const cam = p.sceneRenderer && p.sceneRenderer.camera;
+  const cw = (p.canvas && p.canvas.clientWidth) || 1;
+  const ch = (p.canvas && p.canvas.clientHeight) || 1;
+  if (cam && typeof spine.Vector3 === "function") {
+    try {
+      const a = cam.screenToWorld(new spine.Vector3(0, 0, 0), cw, ch);
+      const b = cam.screenToWorld(new spine.Vector3(dx, dy, 0), cw, ch);
+      return { x: b.x - a.x, y: b.y - a.y };
+    } catch (e) {}
+  }
+  const v = viewportBox(p);
+  return { x: dx * v.width / cw, y: -dy * v.height / ch };
+}
+
+function zoomAt(p, clientX, clientY, factor) {
+  const eff = effectiveBox();
+  const canvas = p.canvas;
+  if (!eff || !canvas) return;
+  const rect = canvas.getBoundingClientRect();
+  const px = clientX - rect.left, py = clientY - rect.top;
+  const cw = canvas.clientWidth || 1, ch = canvas.clientHeight || 1;
+  let wx, wy;
+  const cam = p.sceneRenderer && p.sceneRenderer.camera;
+  if (cam && typeof spine.Vector3 === "function") {
+    try {
+      const w = cam.screenToWorld(new spine.Vector3(px, py, 0), cw, ch);
+      wx = w.x;
+      wy = w.y;
+    } catch (e) {}
+  }
+  if (wx === undefined) {
+    wx = eff.x + (px / cw) * eff.width;
+    wy = eff.y + (1 - py / ch) * eff.height;
+  }
+  // relative spot of the cursor inside the current view
+  const rx = eff.width ? (wx - eff.x) / eff.width : 0.5;
+  const ry = eff.height ? (wy - eff.y) / eff.height : 0.5;
+  // solve zoom + pan so that same world point stays under the cursor
+  viewState.zoom = viewState.zoom * factor;
+  clampView();
+  const w = baseBox.width * viewState.zoom, h = baseBox.height * viewState.zoom;
+  const cx = wx - rx * w + w / 2;
+  const cy = wy - ry * h + h / 2;
+  viewState.panX = (cx - (baseBox.x + baseBox.width / 2)) / baseBox.width;
+  viewState.panY = (cy - (baseBox.y + baseBox.height / 2)) / baseBox.height;
+  clampView();
+  saveViewState();
+  applyView(p);
+}
+
+/** Drag to pan, wheel to zoom. spine-player's own canvas input only drags
+    control bones and toggles pause on mouse-up, so those events are swallowed
+    on the stage canvas (capture phase) and the viewport is driven directly. */
+function enableViewportControls(p) {
+  const canvas = p.canvas;
+  const root = p.dom || canvas;
+  if (!canvas || !root || canvas.dataset.viewportControls) return;
+  canvas.dataset.viewportControls = "1";
+  let dragging = false, lastX = 0, lastY = 0;
+
+  // Attach on `document` in the capture phase: it runs before spine-player's own
+  // canvas listeners (bone drag, and a mouse-up handler that toggles pause
+  // WITHOUT checking whether it saw the mousedown). All three events are
+  // swallowed for the stage canvas while leaving the control bar untouched.
+  let swallowUp = false;
+  document.addEventListener("mousedown", (ev) => {
+    if (ev.target !== canvas || ev.button !== 0) return;
+    ev.stopPropagation();
+    ev.preventDefault();
+    swallowUp = true;
+    dragging = true;
+    lastX = ev.clientX;
+    lastY = ev.clientY;
+    canvas.style.cursor = "grabbing";
+  }, true);
+
+  document.addEventListener("mouseup", (ev) => {
+    if (!swallowUp) return;
+    swallowUp = false;
+    ev.stopPropagation();
+    if (!dragging) return;
+    dragging = false;
+    canvas.style.cursor = "grab";
+  }, true);
+
+  document.addEventListener("click", (ev) => {
+    if (ev.target !== canvas) return;
+    ev.stopPropagation();
+  }, true);
+
+  window.addEventListener("mousemove", (ev) => {
+    if (!dragging || p.disposed || !baseBox) return;
+    const dx = ev.clientX - lastX, dy = ev.clientY - lastY;
+    lastX = ev.clientX;
+    lastY = ev.clientY;
+    if (!dx && !dy) return;
+    const d = screenToWorldDelta(p, dx, dy);
+    // pan is stored as a fraction of the base box so it survives skin switches
+    viewState.panX -= d.x / baseBox.width;
+    viewState.panY -= d.y / baseBox.height;
+    clampView();
+    saveViewState();
+    applyView(p);
+  });
+
+  canvas.addEventListener("wheel", (ev) => {
+    ev.preventDefault();
+    zoomAt(p, ev.clientX, ev.clientY, ev.deltaY > 0 ? 1.1 : 1 / 1.1);
+  }, { passive: false });
+
+  canvas.style.cursor = "grab";
+}
+
+function mountPlayer(item) {
+  destroyPlayer();
+  const host = $("player-container");
+  if (!item.json || !item.atlas) {
+    host.innerHTML = '<div class="hint">缺少 json/atlas</div>';
+    return;
+  }
+  const urlBase = `../skins/${item.path}/`;
+  const first = (item.animNames || []).includes("idle1")
+    ? "idle1"
+    : ((item.animNames || [])[0] || "");
+  player = new spine.SpinePlayer("player-container", {
+    jsonUrl: urlBase + item.json,
+    atlasUrl: urlBase + item.atlas,
+    animation: first,
+    showControls: true,
+    showLoading: true,
+    alpha: true,
+    backgroundColor: "#0a0e14",
+    // Deliberately no x/y/width/height: passing all four disables
+    // spine-player's animation-bounds fit (see the viewport note above), which
+    // is what made every skin render tiny and off-center.
+    viewport: { transitionTime: 0.15 },
+    success: function (p) {
+      player = p;
+      setTimeout(() => {
+        if (first) p.setAnimation(first, loop);
+        refitToBounds(p, false, first); // real bounds => correct default scale
+        // One frame later the skeleton is back in its playback pose, so the
+        // character measurement is meaningful (see frameCharacter).
+        if (focusMode === "role") requestAnimationFrame(() => frameCharacter(p, 0.12));
+        enableViewportControls(p);
+        const btns = $("anim-list").querySelectorAll(".anim-btn");
+        btns.forEach((b) => {
+          if (b.textContent === first) b.classList.add("active");
+        });
+      }, 80);
+    },
+    error: function (p, msg) {
+      console.error(msg);
+    }
+  });
+
+  // Last-resort recovery: if this canvas loses its context on its own (not
+  // because we released it), remount instead of leaving a black stage behind.
+  const cv = host.querySelector("canvas");
+  if (cv && !cv.dataset.lostGuard) {
+    cv.dataset.lostGuard = "1";
+    cv.addEventListener("webglcontextlost", (e) => {
+      e.preventDefault();
+      if (cv.dataset.glReleased || cv.dataset.recovering) return;
+      cv.dataset.recovering = "1";
+      setTimeout(() => { if (current) mountPlayer(current); }, 400);
+    });
+  }
+}
+
+/* ---------- audio ----------
+   The extracted voices live in D:\AIHOME\Mimo\audio and are named after the
+   character (Alps.wav, Acheron_skin106.wav, ...) — NOT after the spine prefab —
+   so probing the skin folder alone (the original approach) never found
+   anything. audio-index.json lists the library; a skin is matched by character
+   token, with the full library searchable as a fallback. */
+const AUDIO_AUTOPLAY_KEY = "spineStudio.audioAutoplay";
+let AUDIO_INDEX = [];
+let audioCandidates = [];
+
+function loadAudioIndex() {
+  return fetch("audio-index.json")
+    .then((r) => r.json())
+    .then((d) => {
+      AUDIO_INDEX = Array.isArray(d.files) ? d.files : [];
+      $("audio-search").placeholder = `搜索音频库（${AUDIO_INDEX.length} 条）…`;
+      renderAudioSearch("");
+      return AUDIO_INDEX;
+    })
+    .catch(() => {
+      AUDIO_INDEX = [];
+      $("audio-match").textContent = "音频索引未加载：先运行 node tools/make-audio-index.mjs 生成 audio-index.json";
+    });
+}
+
+/** Character token from a skin name: 10010_skin_alps03 -> alps. */
+function audioToken(item) {
+  let n = (item && item.name ? item.name : "").toLowerCase();
+  n = n.replace(/^prefabs_spine_/, "").replace(/_spine$/, "");
+  n = n.replace(/^\d+_/, "");
+  n = n.replace(/^(skin|break)\d*_?/, "");
+  n = n.replace(/\d+[a-z]?$/, "");
+  n = n.replace(/[_\s]+$/, "");
+  return n.length >= 3 ? n : null;
+}
+
+function audioCandidatesFor(item) {
+  const stem = (item.json || "").replace(/\.json$/i, "").toLowerCase();
+  const token = audioToken(item);
+  const out = [];
+  const push = (a, why) => { if (a && !out.some((x) => x.file === a.file)) out.push({ file: a.file, base: a.base, why }) };
+  AUDIO_INDEX.filter((a) => a.low === stem).forEach((a) => push(a, "精确同名"));
+  if (token) {
+    const rank = (x) => (x.low === token ? 0 : x.low.startsWith(token + "_skin") ? 1 : x.low.startsWith(token + "_") ? 2 : 3);
+    AUDIO_INDEX.filter((a) => a.low === token || a.low.startsWith(token))
+      .sort((a, b) => rank(a) - rank(b) || a.low.length - b.low.length || a.low.localeCompare(b.low))
+      .forEach((a) => push(a, "角色名"));
+  }
+  return out;
+}
+
+function setAudio(file, autoplay) {
+  const audio = $("audio");
+  audio.src = `../audio/${encodeURIComponent(file)}`;
+  audio.load();
+  if (autoplay && $("audio-autoplay").checked) {
+    audio.play().catch(() => {}); // blocked until the user has interacted; harmless
+  }
+}
+
+function renderAudio(item) {
+  const box = $("audio-match");
+  const list = $("audio-list");
+  list.innerHTML = "";
+  const token = audioToken(item);
+  audioCandidates = AUDIO_INDEX.length ? audioCandidatesFor(item) : [];
+  if (!AUDIO_INDEX.length) return;
+  if (!audioCandidates.length) {
+    box.innerHTML = `没匹配到「${token || item.name}」的音频 —— 可在下方搜索整个音频库。`;
+    $("audio").removeAttribute("src");
+    return;
+  }
+  box.innerHTML = `匹配到 <b>${audioCandidates.length}</b> 条${token ? `（角色 <code>${token}</code>）` : ""}，已选第一条`;
+  audioCandidates.slice(0, 30).forEach((c, i) => {
+    const b = el("button", "anim-btn" + (i === 0 ? " active" : ""), c.base);
+    b.title = `${c.file} · ${c.why}`;
+    b.onclick = () => {
+      setAudio(c.file, true);
+      list.querySelectorAll(".anim-btn").forEach((x) => x.classList.remove("active"));
+      b.classList.add("active");
+    };
+    list.appendChild(b);
+  });
+  setAudio(audioCandidates[0].file, true);
+}
+
+function renderAudioSearch(q) {
+  const box = $("audio-search-list");
+  if (!box) return;
+  const query = (q || "").trim().toLowerCase();
+  if (!query) { box.innerHTML = '<div class="hint">输入关键字搜索音频库</div>'; return; }
+  const hits = AUDIO_INDEX.filter((a) => a.low.includes(query)).slice(0, 60);
+  box.innerHTML = "";
+  if (!hits.length) { box.innerHTML = '<div class="hint">没有匹配的音频</div>'; return; }
+  hits.forEach((h) => {
+    const b = el("button", "anim-btn", h.base);
+    b.onclick = () => setAudio(h.file, true);
+    box.appendChild(b);
+  });
+}
+
+/** Skin next to the audio file wins if present, otherwise use the library. */
+function selectAudioFor(item) {
+  const audio = $("audio");
+  audio.removeAttribute("src");
+  const inSkin = ["mp3", "wav", "ogg"].map((ext) => `../skins/${item.path}/${item.json.replace(/\.json$/i, "." + ext)}`);
+  (async () => {
+    for (const u of inSkin) {
+      try {
+        const r = await fetch(u, { method: "HEAD" });
+        if (r.ok) {
+          audio.src = u;
+          audio.load();
+          $("audio-match").innerHTML = `使用皮肤目录内的音频：<code>${u.split("/").pop()}</code>`;
+          $("audio-list").innerHTML = "";
+          return;
+        }
+      } catch (e) {}
+    }
+    renderAudio(item);
+  })();
+}
+
+/* ---------- stale page watchdog ----------
+   python's http.server sends Last-Modified, and document.lastModified exposes
+   it — so a tab left open while index.html is edited can tell it is stale
+   instead of silently running last generation's code. */
+function watchForUpdates() {
+  const loaded = Date.parse(document.lastModified || "") || 0;
+  if (!loaded) return;
+  setInterval(async () => {
+    try {
+      const r = await fetch("index.html", { method: "HEAD", cache: "no-store" });
+      const stamp = Date.parse(r.headers.get("last-modified") || "") || 0;
+      if (stamp > loaded + 500) $("reload-banner").classList.add("show");
+    } catch (e) {}
+  }, 15000);
+}
+$("reload-banner").onclick = () => location.reload();
+
+/* ---------- UI events ---------- */
+$("q").addEventListener("input", (e) => renderList(e.target.value));
+
+document.querySelectorAll(".tab").forEach((t) => {
+  t.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach((x) => x.classList.remove("active"));
+    document.querySelectorAll(".pane").forEach((x) => x.classList.remove("show"));
+    t.classList.add("active");
+    $(t.dataset.pane).classList.add("show");
+    // keep at most the visible pane's players alive: mini players hold WebGL
+    // contexts and evicting the main stage's context blanks the preview.
+    if (t.dataset.pane === "pane-forms") buildMergeSlots();
+    else destroyMiniPlayers();
+  });
+});
+
+$("btn-focus").onclick = () => {
+  focusMode = "role";
+  $("stat-mode").textContent = "role";
+  if (!player) return;
+  resetViewAdjustment(); // an explicit reframe means "back to auto"
+  frameCharacter(player, 0.12);
+};
+$("btn-fit").onclick = () => {
+  focusMode = "full";
+  $("stat-mode").textContent = "full";
+  if (!player) return;
+  resetViewAdjustment();
+  refitToBounds(player, false);
+};
+$("btn-reset-view").onclick = () => {
+  resetViewAdjustment();
+  if (player) {
+    if (focusMode === "full") refitToBounds(player, false);
+    else frameCharacter(player, 0.12);
+  }
+};
+$("btn-zoom-in").onclick = () => {
+  if (player) zoomBy(player, 0.8);
+};
+$("btn-zoom-out").onclick = () => {
+  if (player) zoomBy(player, 1.25);
+};
+$("btn-toggle-bg").onclick = () => {
+  if (!player || !player.skeleton) return;
+  bgHidden = !bgHidden;
+  $("btn-toggle-bg").classList.toggle("primary", bgHidden);
+  const slots = player.skeleton.slots || [];
+  if (bgHidden) {
+    // Hide decorative layers by zeroing the slot alpha (spine-ts has no
+    // bone.active; the original bone-name toggle did nothing at all).
+    hiddenSlots = [];
+    slots.forEach((slot) => {
+      const slotName = (slot.data && slot.data.name) || "";
+      const boneName = (slot.bone && slot.bone.data && slot.bone.data.name) || "";
+      if (/^(BackGround|effect|bg_)/i.test(slotName) || /^(BackGround|effect|bg_)/i.test(boneName)) {
+        hiddenSlots.push([slot, slot.color.a]);
+        slot.color.a = 0;
+      }
+    });
+  } else {
+    hiddenSlots.forEach(([slot, alpha]) => {
+      try { slot.color.a = alpha; } catch (e) {}
+    });
+    hiddenSlots = [];
+  }
+};
+$("btn-loop").onclick = () => {
+  loop = !loop;
+  $("btn-loop").classList.toggle("primary", loop);
+};
+$("btn-pause").onclick = () => {
+  if (!player) return;
+  paused = !paused;
+  if (paused && player.pause) player.pause();
+  else if (player.play) player.play();
+  $("btn-pause").classList.toggle("primary", paused);
+};
+$("btn-fs").onclick = () => {
+  const s = $("stage");
+  if (s.requestFullscreen) s.requestFullscreen();
+};
+
+// audio drag/drop
+const drop = $("audio-drop");
+drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("drag"); });
+drop.addEventListener("dragleave", () => drop.classList.remove("drag"));
+drop.addEventListener("drop", (e) => {
+  e.preventDefault();
+  drop.classList.remove("drag");
+  const f = e.dataTransfer.files && e.dataTransfer.files[0];
+  if (!f) return;
+  $("audio").src = URL.createObjectURL(f);
+});
+
+// audio panel wiring
+$("audio-search").addEventListener("input", (e) => renderAudioSearch(e.target.value));
+try {
+  $("audio-autoplay").checked = localStorage.getItem(AUDIO_AUTOPLAY_KEY) !== "0";
+} catch (e) {}
+$("audio-autoplay").addEventListener("change", (e) => {
+  try { localStorage.setItem(AUDIO_AUTOPLAY_KEY, e.target.checked ? "1" : "0"); } catch (err) {}
+});
+
+// boot
+loadViewState();
+loadAudioIndex();
+watchForUpdates();
+loadManifest().then(() => {
+  if (MANIFEST.items && MANIFEST.items.length) {
+    // prefer osiris if present
+    const prefer = MANIFEST.items.find((i) => /osiris/i.test(i.id) && /03a/i.test(i.id))
+      || MANIFEST.items.find((i) => i.category === "skins")
+      || MANIFEST.items[0];
+    selectSkin(prefer);
+  }
+});
+</script>
+</body>
+</html>
