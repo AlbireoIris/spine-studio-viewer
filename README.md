@@ -50,3 +50,20 @@ Spine 资源预览台 + 配套资源流水线。
 ### 环境相关常量
 - `open-viewer.ps1` 通过用户环境变量 `MIMO_PYTHON` 定位 Python 解释器。
 - `tools/` 下各脚本顶部的路径常量（数据根、`adb`、AssetStudioModCLI、`playwright-core`）按实际环境修改。
+
+### CrossCore 容器流水线 `tools/pipeline/crosscore`
+
+针对 `Custom/luascripts` 这类「UnityFS 被包装 + 自带加密位」的容器，用于取出其中全部 Lua 脚本（含语音表 `cfgSound.lua`）。
+
+- `parse-luascripts.mjs`：按 UnityFS 格式解析容器（外层序列化头 → bundle 头 → 块表定位 → 数据起始）
+- `hunt-cleanblocks.mjs`：以内容特征识别真块起点（严格解码 ≈ 块长 且 `["` 密集）
+- `walk-blocks.mjs`：链式推进解析（百秒级扫完全文，供快速比对）
+- `enumerate-blocks.mjs` / `measure-block-sizes.mjs`：块边界与块大小分布测量
+- `parse-anchor.mjs` / `scan-backward.mjs`：锚点驱动与精确前驱回溯
+- `scan-by-id.mjs` / `hunt-blocks-full.mjs`：按目标 id / 全文件穷举采集
+- `extract-voice-depth.mjs` / `merge-all-galleries.mjs` / `refill-from-tolerant.mjs`：条目抽取、合并与回填
+- `extract-cfgsound.mjs`：从导出的 `cfgSound.lua` 抽取语音表并回填词表
+- `check-duplicated-header.mjs` / `try-decrypt-blocksinfo.mjs`：容器结构验证与密钥试验（研究性，留档）
+- `dotnet-probe/`：**.NET 8 + `AssetsTools.NET 3.0.3` 探针**，剥前缀并还原首字节后直接打开容器、导出全部 TextAsset
+
+调研与踩坑记录见 `docs/crosscore-容器解析调研.md`。
